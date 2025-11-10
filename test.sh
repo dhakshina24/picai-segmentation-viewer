@@ -5,22 +5,16 @@ SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
 # ./build.sh
 
-# VOLUME_SUFFIX=$(dd if=/dev/urandom bs=32 count=1 | md5sum | cut -c 1-10)
-
-# DOCKER_FILE_SHARE=picai_baseline_nnunet_processor-output-$VOLUME_SUFFIX
-# docker volume create $DOCKER_FILE_SHARE
 DOCKER_FILE_SHARE=$(pwd)/output_debug
 mkdir -p $DOCKER_FILE_SHARE
-# you can see your output (to debug what's going on) by specifying a path instead:
-# DOCKER_FILE_SHARE="/mnt/netcache/pelvis/projects/joeran/tmp-docker-volume"
 
+# Inference
 docker run --cpus=4 --memory=32gb --shm-size=32gb --rm \
         -v $SCRIPTPATH/test/:/input/ \
         -v $DOCKER_FILE_SHARE:/output/ \
         picai_baseline_nnunet_processor
 
-# check detection map (at /output/images/cspca-detection-map/cspca_detection_map.mha)
-# check detection map (using Python 3.10 instead of deprecated SimpleITK Docker image)
+# Validation - Segmentation mask
 docker run --rm \
     -v $DOCKER_FILE_SHARE:/output/ \
     -v $SCRIPTPATH/test/:/input/ \
@@ -32,8 +26,7 @@ else
     echo "Expected detection map was not found..."
 fi
 
-# check case_confidence (at /output/cspca-case-level-likelihood.json)
-# check case_confidence (using Python 3.10 instead of deprecated SimpleITK Docker image)
+# Validation - Confidence Score
 docker run --rm \
     -v $DOCKER_FILE_SHARE:/output/ \
     -v $SCRIPTPATH/test/:/input/ \
@@ -45,6 +38,3 @@ if [ $? -eq 0 ]; then
 else
     echo "Expected case-level prediction was not found..."
 fi
-
-# docker volume rm $DOCKER_FILE_SHARE
-
